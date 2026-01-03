@@ -50,68 +50,133 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Recent projects */}
-        <section className="relative z-10 border-t border-white/10 bg-black">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16 space-y-10">
-            <div className="flex flex-col gap-3">
-              <p className="uppercase tracking-[0.3em] text-xs text-gray-400">
-                Recent Projects
-              </p>
-              <div className="flex flex-col gap-2">
-                <h2 className="text-3xl sm:text-4xl font-semibold">
-                  Selected work, crafted for people.
-                </h2>
-                <p className="text-gray-400 max-w-2xl">
-                  A snapshot of spaces we’ve recently delivered—minimal, thoughtful,
-                  and built to last.
-                </p>
-              </div>
-            </div>
+        {/* Calm text-only introduction section */}
+        <section className="bg-[#fafafa] text-gray-900 py-24 sm:py-32">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+            <p
+              className="text-xl sm:text-2xl lg:text-3xl leading-relaxed text-gray-800"
+              style={{ fontFamily: "var(--font-serif), serif" }}
+            >
+              We believe architecture is fundamentally about people and place.
+              Each project begins with careful attention to context, light, and
+              the subtle ways spaces shape human experience. Our work is quiet,
+              purposeful, and built to last.
+            </p>
+          </div>
+        </section>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {/* Selected Works */}
+        <section className="bg-white text-gray-900 py-20 sm:py-32">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <h2
+              className="text-3xl sm:text-4xl mb-16 sm:mb-20"
+              style={{ fontFamily: "var(--font-serif), serif" }}
+            >
+              Selected Works
+            </h2>
+
+            <div className="space-y-16 sm:space-y-24">
               {[
                 {
-                  title: "Harborview Residence",
+                  name: "Harborview Residence",
                   location: "Seattle, WA",
-                  type: "Residential",
+                  typology: "Residential",
+                  year: "2024",
+                  image: "/projects/harborview.jpg",
+                  href: "/projects/harborview",
                 },
                 {
-                  title: "Crescent Innovation Hub",
+                  name: "Crescent Innovation Hub",
                   location: "Austin, TX",
-                  type: "Commercial",
+                  typology: "Commercial",
+                  year: "2023",
+                  image: "/projects/crescent.jpg",
+                  href: "/projects/crescent",
                 },
                 {
-                  title: "Northline Cultural Center",
+                  name: "Northline Cultural Center",
                   location: "Chicago, IL",
-                  type: "Cultural",
+                  typology: "Cultural",
+                  year: "2023",
+                  image: "/projects/northline.jpg",
+                  href: "/projects/northline",
                 },
               ].map((project) => (
-                <div
-                  key={project.title}
-                  className="group rounded-xl border border-white/10 bg-white/5 backdrop-blur-sm p-6 hover:border-white/30 transition"
-                >
-                  <div className="flex items-center gap-3 text-xs uppercase tracking-[0.2em] text-gray-400">
-                    <span>{project.type}</span>
-                    <span className="h-px w-8 bg-white/20" />
-                    <span>{project.location}</span>
-                  </div>
-                  <h3 className="mt-4 text-xl font-semibold text-white group-hover:text-gray-100">
-                    {project.title}
-                  </h3>
-                  <p className="mt-2 text-sm text-gray-400">
-                    Minimal, context-driven design with sustainable detailing.
-                  </p>
+                <div key={project.name} className="space-y-4">
                   <a
-                    href="/projects"
-                    className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-white/80 hover:text-white transition"
+                    href={project.href}
+                    className="block transition-opacity hover:opacity-95"
                   >
-                    View project
-                    <span aria-hidden="true" className="text-white/60 group-hover:text-white">
-                      →
-                    </span>
+                    <div className="w-full aspect-[4/3] bg-gray-200">
+                      {/* Placeholder for project image - replace with actual image */}
+                      <div className="w-full h-full flex items-center justify-center text-gray-400 text-sm">
+                        {project.name}
+                      </div>
+                    </div>
                   </a>
+                  <div className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-2">
+                    <h3
+                      className="text-xl sm:text-2xl"
+                      style={{ fontFamily: "var(--font-serif), serif" }}
+                    >
+                      {project.name}
+                    </h3>
+                    <p className="text-sm text-gray-600 tracking-wide">
+                      {project.location} · {project.typology} · {project.year}
+                    </p>
+                  </div>
                 </div>
               ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Belief Statement */}
+        <section className="bg-[#fafafa] text-gray-900 py-32 sm:py-40">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <p
+              className="text-3xl sm:text-4xl lg:text-5xl leading-relaxed"
+              style={{ fontFamily: "var(--font-serif), serif" }}
+            >
+              We believe architecture should be felt, not explained.
+            </p>
+          </div>
+        </section>
+
+        {/* Practice Preview */}
+        <section className="bg-white text-gray-900 py-20 sm:py-32">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+              {/* Left: Text */}
+              <div className="space-y-6">
+                <h2
+                  className="text-2xl sm:text-3xl"
+                  style={{ fontFamily: "var(--font-serif), serif" }}
+                >
+                  Our Practice
+                </h2>
+                <p className="text-lg sm:text-xl leading-relaxed text-gray-700">
+                  Our approach is context-driven, responding thoughtfully to each
+                  site's unique conditions and climate. We practice restraint in
+                  design, allowing materials and light to speak clearly. Every
+                  decision serves both function and the human experience of space.
+                </p>
+                <a
+                  href="/practice"
+                  className="inline-block text-gray-900 hover:opacity-70 transition-opacity text-sm tracking-wide"
+                  style={{ fontFamily: "system-ui, -apple-system, sans-serif" }}
+                >
+                  Learn more about our practice →
+                </a>
+              </div>
+
+              {/* Right: Image */}
+              <div className="w-full aspect-[4/3] bg-gray-200">
+                {/* Placeholder for architectural image - replace with actual image */}
+                <div className="w-full h-full flex items-center justify-center text-gray-400 text-sm">
+                  Practice Image
+                </div>
+              </div>
             </div>
           </div>
         </section>
