@@ -8,7 +8,7 @@ export default function ContactPage() {
   return (
     <>
       <Navbar />
-      <main className="min-h-screen bg-white text-gray-900 pt-24 px-6 lg:px-12">
+      <main className="min-h-screen bg-[#101014] text-white pt-24 px-6 lg:px-12">
       <div className="max-w-5xl mx-auto space-y-6">
         <p className="uppercase tracking-[0.3em] text-sm text-gray-500">
           Contact

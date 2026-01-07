@@ -28,22 +28,19 @@ export default function Navbar() {
     { label: "Contact", href: "/contact" },
   ];
 
+  // Transparent initial state on all pages; solid after scroll
+  const hasSolidBackground = isScrolled;
+
   const getLinkClassName = (isActive) => {
     const baseClasses = "text-sm tracking-wider transition-opacity hover:opacity-60";
-    if (!isScrolled) {
-      return `${baseClasses} text-white ${isActive ? "opacity-100" : "opacity-90"}`;
-    } else {
-      return `${baseClasses} ${isActive ? "text-gray-900 opacity-100" : "text-gray-700 opacity-90"}`;
-    }
+    return `${baseClasses} text-white ${isActive ? "opacity-100" : "opacity-80"}`;
   };
 
   return (
     <>
       <nav
         className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${
-          isScrolled
-            ? "bg-[#fafafa] border-b border-gray-200"
-            : "bg-transparent border-b border-transparent"
+          hasSolidBackground ? "bg-[#0b0b0d]" : "bg-transparent"
         }`}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -51,9 +48,7 @@ export default function Navbar() {
             {/* Logo - Serif font */}
             <Link
               href="/"
-              className={`text-lg sm:text-xl hover:opacity-70 transition-opacity ${
-                isScrolled ? "text-gray-800" : "text-white"
-              }`}
+              className="text-lg sm:text-xl text-white hover:opacity-70 transition-opacity"
               style={{ fontFamily: "var(--font-serif), serif" }}
               onClick={() => setIsMobileMenuOpen(false)}
             >
@@ -80,9 +75,7 @@ export default function Navbar() {
             {/* Mobile menu button */}
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className={`md:hidden p-2 transition-opacity hover:opacity-60 ${
-                isScrolled ? "text-gray-800" : "text-white"
-              }`}
+              className="md:hidden p-2 transition-opacity hover:opacity-60 text-white"
               aria-label="Toggle menu"
             >
               {isMobileMenuOpen ? (
@@ -124,9 +117,7 @@ export default function Navbar() {
       {/* Mobile menu overlay */}
       {isMobileMenuOpen && (
         <div
-          className={`fixed inset-0 z-40 md:hidden transition-all duration-300 ${
-            isScrolled ? "bg-[#fafafa]" : "bg-black/95"
-          }`}
+          className="fixed inset-0 z-40 md:hidden transition-all duration-300 bg-[#0b0b0d]"
           onClick={() => setIsMobileMenuOpen(false)}
         >
           <div className="flex flex-col h-full pt-20 px-6">
@@ -137,14 +128,8 @@ export default function Navbar() {
                   key={item.href}
                   href={item.href}
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className={`py-4 text-lg tracking-wider transition-opacity hover:opacity-60 border-b border-gray-200 ${
-                    isScrolled
-                      ? isActive
-                        ? "text-gray-900 opacity-100"
-                        : "text-gray-700 opacity-90"
-                      : isActive
-                        ? "text-white opacity-100"
-                        : "text-white opacity-90"
+                  className={`py-4 text-lg tracking-wider transition-opacity hover:opacity-60 border-b border-gray-800 ${
+                    isActive ? "text-white opacity-100" : "text-white opacity-80"
                   }`}
                   style={{ fontFamily: "system-ui, -apple-system, sans-serif" }}
                 >
