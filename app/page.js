@@ -1,57 +1,228 @@
+"use client";
+
 import Navbar from "./components/Navbar";
+import Image from "next/image";
+import { useState, useEffect, useRef } from "react";
 
 export default function Home() {
+  const [scrollProgress, setScrollProgress] = useState(0);
+  const heroRef = useRef(null);
+  const projectsRef = useRef(null);
+
+  useEffect(() => {
+    let rafId = null;
+    let lastScrollY = 0;
+
+    const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
+
+    const updateProgress = () => {
+      if (!heroRef.current || !projectsRef.current) return;
+
+      const scrollY = window.scrollY;
+      const heroBottom = heroRef.current.offsetTop + heroRef.current.offsetHeight;
+      const projectsTop = projectsRef.current.offsetTop;
+      const viewportHeight = window.innerHeight;
+
+      // Calculate progress: 0 when hero is fully visible, 1 when projects section is fully in view
+      const transitionStart = heroBottom - viewportHeight * 0.8;
+      const transitionEnd = projectsTop - viewportHeight * 0.2;
+      const transitionRange = transitionEnd - transitionStart;
+
+      let progress = 0;
+      if (scrollY < transitionStart) {
+        progress = 0;
+      } else if (scrollY > transitionEnd) {
+        progress = 1;
+      } else {
+        progress = (scrollY - transitionStart) / transitionRange;
+        progress = Math.max(0, Math.min(1, progress));
+        // Apply easing for smoother transition
+        progress = easeOutCubic(progress);
+      }
+
+      setScrollProgress(progress);
+      lastScrollY = scrollY;
+    };
+
+    const handleScroll = () => {
+      if (rafId) {
+        cancelAnimationFrame(rafId);
+      }
+      rafId = requestAnimationFrame(updateProgress);
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    updateProgress(); // Initial calculation
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      if (rafId) {
+        cancelAnimationFrame(rafId);
+      }
+    };
+  }, []);
+
+  // Hero image fades: fade out completely when scrolled past
+  const heroImageOpacity = Math.max(0, 1 - scrollProgress * 1.2);
+  const heroTextOpacity = Math.max(0, 1 - scrollProgress * 1.5);
+  // Bottom text fades with the image
+  const bottomTextOpacity = Math.max(0, 1 - scrollProgress * 1.2);
+
+  // Projects slide up: gentle movement (max 10vh)
+  const projectsTransform = `translateY(${(1 - scrollProgress) * 10}vh)`;
+  const projectsOpacity = 1; // Always fully opaque
+
   return (
     <>
       <Navbar />
-      <main className="bg-black text-white">
-        {/* Hero with background video */}
-        <section className="relative min-h-screen overflow-hidden">
-          <video
-            className="absolute inset-0 h-full w-full object-cover opacity-60"
-            src="/home.mp4"
-            autoPlay
-            loop
-            muted
-            playsInline
-          />
+      <main className="bg-white">
+        {/* Hero with layered composition */}
+        <section
+          ref={heroRef}
+          className="relative min-h-screen bg-white overflow-hidden"
+        >
+          {/* Layer 1 – Base: Pure white background */}
+          
+          {/* Layer 2 – Text: Positioned top-right, independent layer */}
+          <div 
+            className="absolute top-0 right-0 z-10 pt-16 sm:pt-20 lg:pt-24 pr-4 sm:pr-8 lg:pr-12 xl:pr-20"
+            style={{
+              opacity: heroTextOpacity,
+              willChange: "opacity",
+            }}
+          >
+            <div className="w-[90vw] sm:w-[85vw] lg:w-[38vw] xl:w-[42vw] max-w-xl space-y-3 animate-slide-in-up-smooth">
+              <p className="uppercase tracking-[0.3em] text-xs text-[#2a2a2a]">
+                ARCHITECTURE + INTERIOR DESIGN
+              </p>
+              <h1
+                className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl leading-tight text-[#1a1a1a]"
+                style={{ fontFamily: "var(--font-serif), serif" }}
+              >
+                Architecture shaped by space, light, and restraint.
+              </h1>
+            </div>
+          </div>
 
-          <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/70" />
+          {/* Layer 3 – Image: Fixed position, covers entire screen, fades on scroll */}
+          <div 
+            className="fixed inset-0 z-20 w-full h-full pointer-events-none"
+            style={{
+              opacity: heroImageOpacity,
+              willChange: "opacity",
+            }}
+          >
+            <Image
+              src="/home.png"
+              alt="HS Architects"
+              fill
+              className="object-cover"
+              priority
+              sizes="100vw"
+            />
+          </div>
 
-          <div className="relative z-10 flex min-h-screen items-center">
-            <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
-              <div className="max-w-2xl space-y-6">
-                <p className="uppercase tracking-[0.4em] text-sm text-gray-200">
-                  Architecture & Design
-                </p>
-                <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight">
-                  Shaping spaces that elevate the human experience.
-                </h1>
-                <p className="text-lg sm:text-xl text-gray-200/90">
-                  HS Architects is your trusted partner from concept to completion,
-                  delivering thoughtful, sustainable, and iconic environments.
-                </p>
-                <div className="flex flex-wrap gap-4">
-                  <a
-                    href="/projects"
-                    className="inline-flex items-center justify-center rounded-md bg-white text-black px-6 py-3 text-sm font-semibold transition hover:bg-gray-200"
-                  >
-                    View Projects
-                  </a>
-                  <a
-                    href="/contact"
-                    className="inline-flex items-center justify-center rounded-md border border-white/70 px-6 py-3 text-sm font-semibold text-white transition hover:bg-white hover:text-black"
-                  >
-                    Contact Us
-                  </a>
-                </div>
-              </div>
+          {/* Layer 4 – Small text: Fixed position, center bottom, fades on scroll */}
+          <div 
+            className="fixed bottom-0 left-1/2 transform -translate-x-1/2 pb-8 sm:pb-12 lg:pb-16 pointer-events-none"
+            style={{
+              opacity: bottomTextOpacity,
+              willChange: "opacity",
+              zIndex: 25,
+            }}
+          >
+            <div className="bg-white/60 backdrop-blur-md border border-white/30 rounded-lg px-6 py-4 sm:px-8 sm:py-5">
+              <p
+                className="text-sm sm:text-base leading-relaxed text-[#2a2a2a] text-center max-w-2xl"
+                style={{ fontFamily: "system-ui, -apple-system, sans-serif" }}
+              >
+                HS Architects is a multidisciplinary practice focused on creating
+                spaces that respond to context, material, and human experience.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* Selected Projects */}
+        <section
+          ref={projectsRef}
+          className="bg-black text-white py-20 sm:py-32 relative -mt-[10vh] z-30"
+          style={{
+            transform: projectsTransform,
+            willChange: "transform",
+          }}
+        >
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
+              {[
+                {
+                  name: "Harborview Residence",
+                  label: "Architecture",
+                  location: "Seattle, WA",
+                  year: "2024",
+                  image: "/projects/harborview.jpg",
+                  href: "/projects/harborview",
+                },
+                {
+                  name: "Crescent Innovation Hub",
+                  label: "Architecture",
+                  location: "Austin, TX",
+                  year: "2023",
+                  image: "/projects/crescent.jpg",
+                  href: "/projects/crescent",
+                },
+                {
+                  name: "Northline Cultural Center",
+                  label: "Architecture",
+                  location: "Chicago, IL",
+                  year: "2023",
+                  image: "/projects/northline.jpg",
+                  href: "/projects/northline",
+                },
+                {
+                  name: "Riverside Pavilion",
+                  label: "Interior Design",
+                  location: "Portland, OR",
+                  year: "2024",
+                  image: "/projects/riverside.jpg",
+                  href: "/projects/riverside",
+                },
+              ].map((project) => (
+                <a
+                  key={project.name}
+                  href={project.href}
+                  className="block transition-opacity hover:opacity-90"
+                >
+                  <div className="space-y-3">
+                    {/* Project Image */}
+                    <div className="w-full aspect-[4/3] bg-gray-800">
+                      {/* Placeholder for project image - replace with actual image */}
+                      <div className="w-full h-full flex items-center justify-center text-gray-600 text-sm">
+                        {project.name}
+                      </div>
+                    </div>
+                    
+                    {/* Project Info */}
+                    <div className="space-y-1">
+                      <p className="uppercase tracking-[0.2em] text-xs text-gray-400">
+                        {project.label}
+                      </p>
+                      <h3 className="text-base text-gray-200">
+                        {project.name}
+                      </h3>
+                      <p className="text-xs text-gray-500">
+                        {project.location} / {project.year}
+                      </p>
+                    </div>
+                  </div>
+                </a>
+              ))}
             </div>
           </div>
         </section>
 
         {/* Calm text-only introduction section */}
-        <section className="bg-[#fafafa] text-gray-900 py-24 sm:py-32">
+        <section className="bg-[#fafafa] text-gray-900 py-24 sm:py-32 relative z-30">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
             <p
               className="text-xl sm:text-2xl lg:text-3xl leading-relaxed text-gray-800"
@@ -66,7 +237,7 @@ export default function Home() {
         </section>
 
         {/* Selected Works */}
-        <section className="bg-white text-gray-900 py-20 sm:py-32">
+        <section className="bg-white text-gray-900 py-20 sm:py-32 relative z-30">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <h2
               className="text-3xl sm:text-4xl mb-16 sm:mb-20"
@@ -132,19 +303,19 @@ export default function Home() {
         </section>
 
         {/* Belief Statement */}
-        <section className="bg-[#fafafa] text-gray-900 py-32 sm:py-40">
+        <section className="bg-[#fafafa] text-gray-900 py-32 sm:py-40 relative z-30">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <p
               className="text-3xl sm:text-4xl lg:text-5xl leading-relaxed"
               style={{ fontFamily: "var(--font-serif), serif" }}
             >
               We believe architecture should be felt, not explained.
-            </p>
-          </div>
+          </p>
+        </div>
         </section>
 
         {/* Practice Preview */}
-        <section className="bg-white text-gray-900 py-20 sm:py-32">
+        <section className="bg-white text-gray-900 py-20 sm:py-32 relative z-30">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
               {/* Left: Text */}

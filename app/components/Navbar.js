@@ -30,10 +30,15 @@ export default function Navbar() {
 
   // Transparent initial state on all pages; solid after scroll
   const hasSolidBackground = isScrolled;
+  const isHome = pathname === "/";
+  
+  // On home page with white background, use black text when not scrolled
+  const textColor = isHome && !isScrolled ? "text-gray-900" : "text-white";
+  const textOpacity = isActive => isActive ? "opacity-100" : "opacity-80";
 
   const getLinkClassName = (isActive) => {
     const baseClasses = "text-sm tracking-wider transition-opacity hover:opacity-60";
-    return `${baseClasses} text-white ${isActive ? "opacity-100" : "opacity-80"}`;
+    return `${baseClasses} ${textColor} ${textOpacity(isActive)}`;
   };
 
   return (
@@ -48,7 +53,7 @@ export default function Navbar() {
             {/* Logo - Serif font */}
             <Link
               href="/"
-              className="text-lg sm:text-xl text-white hover:opacity-70 transition-opacity"
+              className="text-lg sm:text-xl hover:opacity-70 transition-opacity text-white"
               style={{ fontFamily: "var(--font-serif), serif" }}
               onClick={() => setIsMobileMenuOpen(false)}
             >
@@ -75,7 +80,7 @@ export default function Navbar() {
             {/* Mobile menu button */}
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="md:hidden p-2 transition-opacity hover:opacity-60 text-white"
+              className={`md:hidden p-2 transition-opacity hover:opacity-60 ${textColor}`}
               aria-label="Toggle menu"
             >
               {isMobileMenuOpen ? (
