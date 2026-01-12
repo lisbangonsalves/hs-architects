@@ -6,6 +6,7 @@ import { useState, useEffect, useRef } from "react";
 
 export default function Home() {
   const [scrollProgress, setScrollProgress] = useState(0);
+  const [projectsVisible, setProjectsVisible] = useState(false);
   const heroRef = useRef(null);
   const projectsRef = useRef(null);
 
@@ -62,11 +63,42 @@ export default function Home() {
     };
   }, []);
 
-  // Hero image fades: fade out completely when scrolled past
-  const heroImageOpacity = Math.max(0, 1 - scrollProgress * 1.2);
-  const heroTextOpacity = Math.max(0, 1 - scrollProgress * 1.5);
+  // Intersection Observer for projects animation
+  useEffect(() => {
+    if (!projectsRef.current) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting && !projectsVisible) {
+            setProjectsVisible(true);
+          }
+        });
+      },
+      {
+        threshold: 0.2, // Trigger when 20% of the section is visible
+        rootMargin: "0px",
+      }
+    );
+
+    observer.observe(projectsRef.current);
+
+    return () => {
+      if (projectsRef.current) {
+        observer.unobserve(projectsRef.current);
+      }
+    };
+  }, [projectsVisible]);
+
+  // Hero image fades more gradually - stays visible longer
+  const heroImageOpacity = Math.max(0, 1 - scrollProgress * 0.8);
+  const heroTextOpacity = Math.max(0, 1 - scrollProgress * 1.0);
   // Bottom text fades with the image
-  const bottomTextOpacity = Math.max(0, 1 - scrollProgress * 1.2);
+  const bottomTextOpacity = Math.max(0, 1 - scrollProgress * 0.8);
+  // Black gradient overlay fades in more gradually
+  const blackOverlayOpacity = Math.min(1, scrollProgress * 0.9);
+  // Projects section background appears more gradually as it approaches top
+  const projectsBgOpacity = scrollProgress >= 0.7 ? Math.min(1, (scrollProgress - 0.7) / 0.3) : 0;
 
   // Projects slide up: gentle movement (max 10vh)
   const projectsTransform = `translateY(${(1 - scrollProgress) * 10}vh)`;
@@ -82,6 +114,20 @@ export default function Home() {
           className="relative min-h-screen bg-white overflow-hidden"
         >
           {/* Layer 1 – Base: Pure white background */}
+          <div className="absolute inset-0 bg-white z-0" />
+          
+          {/* Black gradient overlay that fades in on scroll */}
+          <div 
+            className="fixed inset-0 pointer-events-none"
+            style={{
+              background: `linear-gradient(to bottom, 
+                rgba(0, 0, 0, ${blackOverlayOpacity * 0.3}), 
+                rgba(0, 0, 0, ${blackOverlayOpacity * 0.7})
+              )`,
+              willChange: "background",
+              zIndex: 15,
+            }}
+          />
           
           {/* Layer 2 – Text: Positioned top-right, independent layer */}
           <div 
@@ -146,7 +192,7 @@ export default function Home() {
         {/* Selected Projects */}
         <section
           ref={projectsRef}
-          className="bg-black text-white py-20 sm:py-32 relative -mt-[10vh] z-30"
+          className="bg-white text-gray-900 py-20 sm:py-32 relative -mt-[10vh] z-30"
           style={{
             transform: projectsTransform,
             willChange: "transform",
@@ -187,11 +233,17 @@ export default function Home() {
                   image: "/projects/riverside.jpg",
                   href: "/projects/riverside",
                 },
-              ].map((project) => (
+              ].map((project, index) => (
                 <a
                   key={project.name}
                   href={project.href}
-                  className="block transition-opacity hover:opacity-90"
+                  className={`block transition-opacity hover:opacity-90 ${
+                    projectsVisible ? "animate-fade-in-up" : "opacity-0"
+                  }`}
+                  style={{
+                    animationDelay: projectsVisible ? `${index * 0.15}s` : "0s",
+                    animationFillMode: "both",
+                  }}
                 >
                   <div className="space-y-3">
                     {/* Project Image */}
@@ -204,13 +256,13 @@ export default function Home() {
                     
                     {/* Project Info */}
                     <div className="space-y-1">
-                      <p className="uppercase tracking-[0.2em] text-xs text-gray-400">
+                      <p className="uppercase tracking-[0.2em] text-xs text-gray-600">
                         {project.label}
                       </p>
-                      <h3 className="text-base text-gray-200">
+                      <h3 className="text-base text-gray-900">
                         {project.name}
                       </h3>
-                      <p className="text-xs text-gray-500">
+                      <p className="text-xs text-gray-600">
                         {project.location} / {project.year}
                       </p>
                     </div>
@@ -221,97 +273,49 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Calm text-only introduction section */}
-        <section className="bg-[#fafafa] text-gray-900 py-24 sm:py-32 relative z-30">
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-            <p
-              className="text-xl sm:text-2xl lg:text-3xl leading-relaxed text-gray-800"
-              style={{ fontFamily: "var(--font-serif), serif" }}
-            >
-              We believe architecture is fundamentally about people and place.
-              Each project begins with careful attention to context, light, and
-              the subtle ways spaces shape human experience. Our work is quiet,
-              purposeful, and built to last.
-            </p>
-          </div>
-        </section>
-
-        {/* Selected Works */}
-        <section className="bg-white text-gray-900 py-20 sm:py-32 relative z-30">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <h2
-              className="text-3xl sm:text-4xl mb-16 sm:mb-20"
-              style={{ fontFamily: "var(--font-serif), serif" }}
-            >
-              Selected Works
-            </h2>
-
-            <div className="space-y-16 sm:space-y-24">
-              {[
-                {
-                  name: "Harborview Residence",
-                  location: "Seattle, WA",
-                  typology: "Residential",
-                  year: "2024",
-                  image: "/projects/harborview.jpg",
-                  href: "/projects/harborview",
-                },
-                {
-                  name: "Crescent Innovation Hub",
-                  location: "Austin, TX",
-                  typology: "Commercial",
-                  year: "2023",
-                  image: "/projects/crescent.jpg",
-                  href: "/projects/crescent",
-                },
-                {
-                  name: "Northline Cultural Center",
-                  location: "Chicago, IL",
-                  typology: "Cultural",
-                  year: "2023",
-                  image: "/projects/northline.jpg",
-                  href: "/projects/northline",
-                },
-              ].map((project) => (
-                <div key={project.name} className="space-y-4">
-                  <a
-                    href={project.href}
-                    className="block transition-opacity hover:opacity-95"
-                  >
-                    <div className="w-full aspect-[4/3] bg-gray-200">
-                      {/* Placeholder for project image - replace with actual image */}
-                      <div className="w-full h-full flex items-center justify-center text-gray-400 text-sm">
-                        {project.name}
-                      </div>
-                    </div>
-                  </a>
-                  <div className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-2">
-                    <h3
-                      className="text-xl sm:text-2xl"
-                      style={{ fontFamily: "var(--font-serif), serif" }}
-                    >
-                      {project.name}
-                    </h3>
-                    <p className="text-sm text-gray-600 tracking-wide">
-                      {project.location} · {project.typology} · {project.year}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Belief Statement */}
-        <section className="bg-[#fafafa] text-gray-900 py-32 sm:py-40 relative z-30">
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <p
-              className="text-3xl sm:text-4xl lg:text-5xl leading-relaxed"
-              style={{ fontFamily: "var(--font-serif), serif" }}
-            >
-              We believe architecture should be felt, not explained.
+        {/* We Believe Section */}
+        <section className="bg-black py-32 sm:py-40 relative z-30">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            {/* Text Content */}
+            <div className="space-y-8 sm:space-y-10 mb-16 sm:mb-20">
+              {/* Small Label */}
+              <p className="uppercase tracking-[0.3em] text-xs text-gray-400">
+                WE BELIEVE
+              </p>
+              
+              {/* Main Statement */}
+              <h2
+                className="text-3xl sm:text-4xl lg:text-5xl leading-tight text-[#e8e3db]"
+                style={{ fontFamily: "var(--font-serif), serif" }}
+              >
+                We believe architecture is shaped
+                by space, light, and human experience.
+              </h2>
+              
+              {/* Supporting Paragraph */}
+              <p
+                className="text-base sm:text-lg lg:text-xl leading-relaxed text-[#e2ddce] max-w-3xl"
+                style={{ fontFamily: "system-ui, -apple-system, sans-serif" }}
+              >
+                Each project is approached as a response to its context —
+                stripped back to what is essential, so that what remains
+                can be felt with clarity and purpose.
           </p>
         </div>
+            
+            {/* Image - Aligned to left with negative space */}
+            <div className="w-full max-w-4xl">
+              <div className="relative w-full aspect-[4/3]">
+                <Image
+                  src="/home2.png"
+                  alt="HS Architects"
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 1024px"
+                />
+              </div>
+            </div>
+          </div>
         </section>
 
         {/* Practice Preview */}
