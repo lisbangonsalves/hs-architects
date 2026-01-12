@@ -1,0 +1,18 @@
+[
+  {
+    "id": "1",
+    "name": "Architecture",
+    "slug": "architecture",
+    "description": "Built work shaped by site, light, material, and context.",
+    "image": "/home.png",
+    "createdAt": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "2",
+    "name": "Interior Design",
+    "slug": "interior-design",
+    "description": "Spaces crafted for everyday life, work, and well-being.",
+    "image": "/home2.png",
+    "createdAt": "2024-01-01T00:00:00Z"
+  }
+]

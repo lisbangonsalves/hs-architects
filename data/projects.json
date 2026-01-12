@@ -1,0 +1,46 @@
+[
+  {
+    "id": "1",
+    "name": "Harborview Residence",
+    "categoryId": "1",
+    "label": "Architecture",
+    "location": "Seattle, WA",
+    "year": "2024",
+    "image": "/projects/harborview.jpg",
+    "href": "/projects/harborview",
+    "createdAt": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "2",
+    "name": "Crescent Innovation Hub",
+    "categoryId": "1",
+    "label": "Architecture",
+    "location": "Austin, TX",
+    "year": "2023",
+    "image": "/projects/crescent.jpg",
+    "href": "/projects/crescent",
+    "createdAt": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "3",
+    "name": "Northline Cultural Center",
+    "categoryId": "1",
+    "label": "Architecture",
+    "location": "Chicago, IL",
+    "year": "2023",
+    "image": "/projects/northline.jpg",
+    "href": "/projects/northline",
+    "createdAt": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "4",
+    "name": "Riverside Pavilion",
+    "categoryId": "2",
+    "label": "Interior Design",
+    "location": "Portland, OR",
+    "year": "2024",
+    "image": "/projects/riverside.jpg",
+    "href": "/projects/riverside",
+    "createdAt": "2024-01-01T00:00:00Z"
+  }
+]
