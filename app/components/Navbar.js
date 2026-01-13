@@ -31,9 +31,11 @@ export default function Navbar() {
   // Transparent initial state on all pages; solid after scroll
   const hasSolidBackground = isScrolled;
   const isHome = pathname === "/";
+  const isProjects = pathname === "/projects";
   
   // On home page with white background, use black text when not scrolled
-  const textColor = isHome && !isScrolled ? "text-gray-900" : "text-white";
+  // On projects page with white background, use dark text
+  const textColor = (isHome && !isScrolled) || (isProjects && !isScrolled) ? "text-gray-900" : "text-white";
   const textOpacity = isActive => isActive ? "opacity-100" : "opacity-80";
 
   const getLinkClassName = (isActive) => {
@@ -53,7 +55,7 @@ export default function Navbar() {
             {/* Logo - Serif font */}
             <Link
               href="/"
-              className="text-lg sm:text-xl hover:opacity-70 transition-opacity text-white"
+              className={`text-lg sm:text-xl hover:opacity-70 transition-opacity ${textColor}`}
               style={{ fontFamily: "var(--font-serif), serif" }}
               onClick={() => setIsMobileMenuOpen(false)}
             >
