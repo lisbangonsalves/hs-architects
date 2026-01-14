@@ -69,6 +69,32 @@ export default function ProjectsPage() {
     }
   };
 
+  // Hardcoded 3x3 grid images for each category
+  const categoryImages = {
+    Architecture: [
+      "/home.png",
+      "/home2.png",
+      "/home.png",
+      "/home2.png",
+      "/home.png",
+      "/home2.png",
+      "/home.png",
+      "/home2.png",
+      "/home.png",
+    ],
+    "Interior Design": [
+      "/home2.png",
+      "/home.png",
+      "/home2.png",
+      "/home.png",
+      "/home2.png",
+      "/home.png",
+      "/home2.png",
+      "/home.png",
+      "/home2.png",
+    ],
+  };
+
   const categoryContent = {
     Architecture: {
       title: "PROJECT — ARCHITECTURE",
@@ -127,6 +153,7 @@ export default function ProjectsPage() {
               const content = categoryContent[category.name];
               if (!content) return null;
 
+              const images = categoryImages[category.name] || [];
               const categoryId = `category-${category.id}`;
               const isVisible = visibleElements[categoryId];
 
@@ -138,26 +165,34 @@ export default function ProjectsPage() {
                 >
                   <Link
                     href={`/projects/${category.slug}`}
-                    className="block group transition-all duration-300"
+                    className="block group transition-opacity duration-300 hover:opacity-95"
                   >
                     <div className="flex flex-col lg:flex-row items-stretch">
-                      {/* Left: Image */}
+                      {/* Left: 3x3 Image Grid */}
                       <div
-                        className={`w-full lg:w-1/2 aspect-[4/3] lg:aspect-auto lg:h-[50vh] relative overflow-hidden transition-all duration-1000 ${
+                        className={`w-full lg:w-1/2 p-4 sm:p-6 lg:p-8 transition-all duration-1000 ${
                           isVisible
                             ? "opacity-100 translate-x-0"
                             : "opacity-0 -translate-x-8"
                         }`}
                         style={{ transitionDelay: `${index * 150}ms` }}
                       >
-                        <Image
-                          src={category.image || "/home.png"}
-                          alt={category.name}
-                          fill
-                          className="object-cover transition-transform duration-700 group-hover:scale-105"
-                          sizes="(max-width: 1024px) 100vw, 50vw"
-                          priority={index === 0}
-                        />
+                        <div className="grid grid-cols-3 gap-1 sm:gap-2 aspect-square">
+                          {images.map((imageSrc, imgIndex) => (
+                            <div
+                              key={imgIndex}
+                              className="relative aspect-square overflow-hidden group/image"
+                            >
+                              <Image
+                                src={imageSrc}
+                                alt={`${category.name} project ${imgIndex + 1}`}
+                                fill
+                                className="object-cover transition-transform duration-500 group-hover/image:scale-110"
+                                sizes="(max-width: 1024px) 33vw, 16vw"
+                              />
+                            </div>
+                          ))}
+                        </div>
                       </div>
 
                       {/* Right: Text */}
@@ -170,15 +205,15 @@ export default function ProjectsPage() {
                           }`}
                           style={{ transitionDelay: `${index * 150 + 100}ms` }}
                         >
-                          {/* Category Title */}
+                          {/* Category Title - Clean serif */}
                           <h2
-                            className="text-2xl sm:text-3xl lg:text-4xl text-gray-800 font-medium transition-colors duration-300 group-hover:text-gray-900"
-                            style={{ fontFamily: "system-ui, -apple-system, sans-serif" }}
+                            className="text-3xl sm:text-4xl lg:text-5xl text-gray-800 font-medium transition-colors duration-300 group-hover:text-gray-900"
+                            style={{ fontFamily: "var(--font-serif), serif" }}
                           >
                             {content.title}
                           </h2>
 
-                          {/* Description */}
+                          {/* Description - Clean sans-serif */}
                           <p
                             className="text-base sm:text-lg leading-relaxed text-gray-700 transition-colors duration-300 group-hover:text-gray-800"
                             style={{ fontFamily: "system-ui, -apple-system, sans-serif" }}
