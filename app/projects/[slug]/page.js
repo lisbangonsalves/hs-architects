@@ -188,14 +188,16 @@ export default function CategoryProjectsPage() {
                   <div 
                     id={`grid-container-${projectId}`}
                     className="w-full lg:w-[45%] p-4 sm:p-6 lg:p-8 flex items-center justify-center relative z-0"
+                    style={{ overflow: 'visible' }}
                   >
-                    <div className="w-full max-w-xs lg:max-w-sm relative">
-                      <div 
-                        ref={(el) => {
-                          if (el) gridRefs.current[projectId] = el;
-                        }}
-                        className="grid grid-cols-3 gap-1 sm:gap-2 aspect-square w-full relative"
-                      >
+                    <div 
+                      className="w-full max-w-xs lg:max-w-sm relative"
+                      style={{ overflow: 'visible' }}
+                      ref={(el) => {
+                        if (el) gridRefs.current[projectId] = el;
+                      }}
+                    >
+                      <div className="grid grid-cols-3 gap-1 sm:gap-2 aspect-square w-full relative">
                         {project.images.map((imagePath, imageIndex) => {
                           const imageId = `${projectId}-${imageIndex}`;
                           const isActive = activeImageId === imageId;
@@ -206,63 +208,48 @@ export default function CategoryProjectsPage() {
                               key={imageIndex}
                               className="relative aspect-square overflow-hidden"
                             >
-                              {!isActive && (
-                                <motion.div
-                                  layoutId={imageId}
-                                  className="relative w-full h-full cursor-pointer z-0"
-                                  onClick={() => handleImageClick(projectId, imageIndex)}
-                                  onKeyDown={(e) => handleImageKeyDown(e, projectId, imageIndex)}
-                                  tabIndex={0}
-                                  role="button"
-                                  aria-label={`Expand image ${imageIndex + 1} of ${project.title}`}
-                                  whileHover={{ opacity: 0.8 }}
-                                  transition={{ duration: 0.2 }}
-                                >
-                                  <Image
-                                    src={imageSrc}
-                                    alt={`${project.title} - Image ${imageIndex + 1}`}
-                                    fill
-                                    className="object-cover"
-                                    sizes="(max-width: 1024px) 33vw, 200px"
-                                  />
-                                </motion.div>
-                              )}
-                              {isActive && (
-                                <div className="w-full h-full bg-white" />
-                              )}
+                              <motion.div
+                                layoutId={imageId}
+                                className={`relative w-full h-full cursor-pointer z-0 ${isActive ? 'opacity-0' : 'opacity-100'}`}
+                                onClick={() => handleImageClick(projectId, imageIndex)}
+                                onKeyDown={(e) => handleImageKeyDown(e, projectId, imageIndex)}
+                                tabIndex={0}
+                                role="button"
+                                aria-label={`Expand image ${imageIndex + 1} of ${project.title}`}
+                                whileHover={!isActive ? { opacity: 0.8 } : {}}
+                                transition={{ duration: 0.2 }}
+                              >
+                                <Image
+                                  src={imageSrc}
+                                  alt={`${project.title} - Image ${imageIndex + 1}`}
+                                  fill
+                                  className="object-cover"
+                                  sizes="(max-width: 1024px) 33vw, 200px"
+                                />
+                              </motion.div>
                             </div>
                           );
                         })}
                       </div>
-                    </div>
 
-                    {/* Expanded Image Overlay - Positioned absolutely within grid */}
-                    <AnimatePresence>
-                      {isExpanded && activeImageId?.startsWith(`${projectId}-`) && (
-                        <motion.div
-                          key={activeImageId}
-                          layoutId={activeImageId}
-                          className="absolute z-50 pointer-events-none"
-                          style={{
-                            top: '50%',
-                            left: '50%',
-                            transform: 'translate(-50%, -50%)',
-                            width: gridRefs.current[projectId]?.offsetWidth || '100%',
-                            height: gridRefs.current[projectId]?.offsetHeight || '100%',
-                            maxWidth: '28rem',
-                            maxHeight: '28rem',
-                          }}
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          exit={{ opacity: 0 }}
-                          transition={{ 
-                            duration: 0.5, 
-                            ease: [0.4, 0, 0.2, 1],
-                            layout: { duration: 0.5, ease: [0.4, 0, 0.2, 1] }
-                          }}
-                        >
-                          <div 
-                            className="relative w-full h-full cursor-pointer group pointer-events-auto"
+                      {/* Expanded Image - Left aligned with grid, same height, extends right */}
+                      <AnimatePresence>
+                        {isExpanded && activeImageId?.startsWith(`${projectId}-`) && (
+                          <motion.div
+                            key={activeImageId}
+                            layoutId={activeImageId}
+                            className="absolute top-0 left-0 z-50"
+                            style={{ 
+                              height: gridRefs.current[projectId]?.offsetWidth || '100%',
+                            }}
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            transition={{ 
+                              duration: 0.5, 
+                              ease: [0.4, 0, 0.2, 1],
+                              layout: { duration: 0.5, ease: [0.4, 0, 0.2, 1] }
+                            }}
                             onClick={() => setActiveImageId(null)}
                             onKeyDown={(e) => {
                               if (e.key === "Enter" || e.key === " ") {
@@ -274,30 +261,34 @@ export default function CategoryProjectsPage() {
                             role="button"
                             aria-label="Collapse image"
                           >
-                            <Image
+                            <img
                               src={getImageSrc(
                                 project.images[
                                   parseInt(activeImageId.split("-")[1])
                                 ]
                               )}
                               alt={`${project.title} - Expanded view`}
-                              fill
-                              className="object-contain pointer-events-none group-hover:opacity-95 transition-opacity duration-200"
-                              sizes="(max-width: 1024px) 100vw, 45vw"
+                              className="cursor-pointer hover:opacity-95 transition-opacity duration-200"
+                              style={{ 
+                                height: '100%', 
+                                width: 'auto',
+                                maxWidth: 'none',
+                                objectFit: 'contain',
+                              }}
                             />
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
                   </div>
 
                   {/* Middle: White Space Lane - Always visible */}
-                  <div className="w-full lg:w-[30%] bg-white flex items-center justify-center relative p-4 sm:p-6 lg:p-8 min-h-[300px] lg:min-h-0 z-0">
+                  <div className="w-full lg:w-[5%] bg-white flex items-center justify-center relative min-h-[300px] lg:min-h-0 z-0">
                     {/* Empty white space - reserved for future use */}
                   </div>
 
                   {/* Right: Text Column */}
-                  <div className="w-full lg:w-[25%] flex items-center px-4 sm:px-6 lg:px-8 xl:px-12 py-12 lg:py-0">
+                  <div className="w-full lg:w-[50%] flex items-center px-4 sm:px-6 lg:px-8 py-12 lg:py-0">
                     <div className="w-full space-y-4">
                       <h2
                         className="text-xl sm:text-2xl lg:text-3xl text-gray-800 font-medium"
