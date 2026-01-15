@@ -2,6 +2,7 @@
 
 import Navbar from "../../components/Navbar";
 import Image from "next/image";
+import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
 import { useParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -165,6 +166,24 @@ export default function CategoryProjectsPage() {
         {/* Header */}
         <section className="bg-white pt-24 pb-12 sm:pt-32 sm:pb-16">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            {/* Back Link */}
+            <Link 
+              href="/projects" 
+              className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-800 transition-colors mb-6"
+            >
+              <svg 
+                xmlns="http://www.w3.org/2000/svg" 
+                fill="none" 
+                viewBox="0 0 24 24" 
+                strokeWidth={1.5} 
+                stroke="currentColor" 
+                className="w-4 h-4"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+              </svg>
+              Back to Projects
+            </Link>
+            
             <h1 className="uppercase tracking-[0.2em] text-2xl sm:text-3xl lg:text-4xl font-medium text-black">
               {slug === "architecture" ? "ARCHITECTURE" : slug === "interior-design" ? "INTERIOR DESIGN" : "PROJECTS"}
             </h1>
