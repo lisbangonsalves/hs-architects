@@ -4,6 +4,7 @@ import Navbar from "../components/Navbar";
 import Image from "next/image";
 import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
+import { getCloudinaryImageUrl } from "../../lib/cloudinaryClient";
 
 export default function ProjectsPage() {
   const [categories, setCategories] = useState([]);
@@ -20,8 +21,8 @@ export default function ProjectsPage() {
     if (loading) return;
 
     const observerOptions = {
-      threshold: 0.2,
-      rootMargin: "0px",
+      threshold: 0.1,
+      rootMargin: "50px",
     };
 
     const observer = new IntersectionObserver((entries) => {
@@ -63,13 +64,18 @@ export default function ProjectsPage() {
       );
       setCategories(filtered);
       setLoading(false);
+      
+      // If no categories found, show a fallback message
+      if (filtered.length === 0) {
+        console.warn("No categories found. Make sure categories.json has Architecture and Interior Design categories.");
+      }
     } catch (error) {
       console.error("Error fetching categories:", error);
       setLoading(false);
     }
   };
 
-  // Hardcoded 3x3 grid images for each category
+  // Placeholder images for the 3x3 grid - using local images as placeholders
   const categoryImages = {
     Architecture: [
       "/home.png",
@@ -95,6 +101,22 @@ export default function ProjectsPage() {
     ],
   };
 
+  // Helper function to get image source (Cloudinary or fallback)
+  const getImageSrc = (imagePath) => {
+    // Check if it's a Cloudinary public ID (no leading slash) or local path
+    if (imagePath.startsWith('/')) {
+      return imagePath; // Local path
+    }
+    // Use Cloudinary with optimized settings for grid images
+    return getCloudinaryImageUrl(imagePath, {
+      width: 800,
+      height: 800,
+      crop: 'fill',
+      quality: 'auto',
+      format: 'auto',
+    });
+  };
+
   const categoryContent = {
     Architecture: {
       title: "PROJECT — ARCHITECTURE",
@@ -116,29 +138,18 @@ export default function ProjectsPage() {
         <section
           ref={introRef}
           data-id="intro"
-          className="bg-white pt-24 pb-20 sm:pt-32 sm:pb-24"
+          className="bg-white pt-24 pb-12 sm:pt-32 sm:pb-16"
         >
           <div
-            className={`max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 transition-all duration-1000 ${
+            className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 transition-all duration-1000 ${
               visibleElements.intro
                 ? "opacity-100 translate-y-0"
                 : "opacity-0 translate-y-8"
             }`}
           >
-            <p className="uppercase tracking-[0.3em] text-xs text-gray-400 mb-6">
+            <h1 className="uppercase tracking-[0.2em] text-2xl sm:text-3xl lg:text-4xl font-medium text-black">
               PROJECTS
-            </p>
-            <h1
-              className="text-3xl sm:text-4xl lg:text-5xl leading-tight mb-8 text-gray-900"
-              style={{ fontFamily: "var(--font-serif), serif" }}
-            >
-              A curated collection of spaces shaped by context and craft.
             </h1>
-            <p className="text-base sm:text-lg leading-relaxed text-gray-700 max-w-2xl">
-              Our work spans diverse typologies, each project a thoughtful
-              response to its environment, client aspirations, and the enduring
-              principles of good design.
-            </p>
           </div>
         </section>
 
@@ -146,6 +157,10 @@ export default function ProjectsPage() {
         {loading ? (
           <div className="min-h-screen flex items-center justify-center">
             <p className="text-gray-500">Loading...</p>
+          </div>
+        ) : categories.length === 0 ? (
+          <div className="min-h-screen flex items-center justify-center">
+            <p className="text-gray-500">No categories found.</p>
           </div>
         ) : (
           <div>
@@ -155,7 +170,7 @@ export default function ProjectsPage() {
 
               const images = categoryImages[category.name] || [];
               const categoryId = `category-${category.id}`;
-              const isVisible = visibleElements[categoryId];
+              const isVisible = visibleElements[categoryId] ?? true;
 
               return (
                 <div
@@ -170,45 +185,48 @@ export default function ProjectsPage() {
                     <div className="flex flex-col lg:flex-row items-stretch">
                       {/* Left: 3x3 Image Grid */}
                       <div
-                        className={`w-full lg:w-1/2 p-4 sm:p-6 lg:p-8 transition-all duration-1000 ${
+                        className={`w-full lg:w-1/2 p-4 sm:p-6 lg:p-8 transition-all duration-1000 flex items-center justify-center ${
                           isVisible
                             ? "opacity-100 translate-x-0"
                             : "opacity-0 -translate-x-8"
                         }`}
                         style={{ transitionDelay: `${index * 150}ms` }}
                       >
-                        <div className="grid grid-cols-3 gap-1 sm:gap-2 aspect-square">
-                          {images.map((imageSrc, imgIndex) => (
-                            <div
-                              key={imgIndex}
-                              className="relative aspect-square overflow-hidden group/image"
-                            >
-                              <Image
-                                src={imageSrc}
-                                alt={`${category.name} project ${imgIndex + 1}`}
-                                fill
-                                className="object-cover transition-transform duration-500 group-hover/image:scale-110"
-                                sizes="(max-width: 1024px) 33vw, 16vw"
-                              />
-                            </div>
-                          ))}
+                        <div className="grid grid-cols-3 gap-1 sm:gap-2 aspect-square w-full max-w-xs lg:max-w-sm">
+                          {images.map((imagePath, imgIndex) => {
+                            const imageSrc = getImageSrc(imagePath);
+                            return (
+                              <div
+                                key={imgIndex}
+                                className="relative aspect-square overflow-hidden group/image"
+                              >
+                                <Image
+                                  src={imageSrc}
+                                  alt={`${category.name} project ${imgIndex + 1}`}
+                                  fill
+                                  className="object-cover transition-transform duration-500 group-hover/image:scale-110"
+                                  sizes="(max-width: 1024px) 33vw, 16vw"
+                                />
+                              </div>
+                            );
+                          })}
                         </div>
                       </div>
 
                       {/* Right: Text */}
-                      <div className="w-full lg:w-1/2 flex items-center px-6 sm:px-8 lg:px-12 xl:px-16 py-12 lg:py-0">
+                      <div className="w-full lg:w-1/2 flex items-center px-4 sm:px-6 lg:px-8 xl:px-12 py-12 lg:py-0">
                         <div
-                          className={`max-w-lg space-y-6 transition-all duration-1000 ${
+                          className={`w-full max-w-lg space-y-6 transition-all duration-1000 ${
                             isVisible
                               ? "opacity-100 translate-x-0"
                               : "opacity-0 translate-x-8"
                           }`}
                           style={{ transitionDelay: `${index * 150 + 100}ms` }}
                         >
-                          {/* Category Title - Clean serif */}
+                          {/* Category Title - Consistent font */}
                           <h2
-                            className="text-3xl sm:text-4xl lg:text-5xl text-gray-800 font-medium transition-colors duration-300 group-hover:text-gray-900"
-                            style={{ fontFamily: "var(--font-serif), serif" }}
+                            className="text-xl sm:text-2xl lg:text-3xl text-gray-800 font-medium transition-colors duration-300 group-hover:text-gray-900"
+                            style={{ fontFamily: "system-ui, -apple-system, sans-serif" }}
                           >
                             {content.title}
                           </h2>
@@ -224,11 +242,6 @@ export default function ProjectsPage() {
                       </div>
                     </div>
                   </Link>
-
-                  {/* Divider (except after last item) */}
-                  {index < categories.length - 1 && (
-                    <div className="border-t border-gray-200"></div>
-                  )}
                 </div>
               );
             })}

@@ -1,0 +1,74 @@
+[
+  {
+    "id": "1",
+    "position": 1,
+    "image": "/home.png",
+    "cloudinaryPublicId": null,
+    "createdAt": "2024-01-01T00:00:00Z",
+    "updatedAt": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "2",
+    "position": 2,
+    "image": "https://res.cloudinary.com/dtkrbg82m/image/upload/v1768484213/hs-architects/home-grid/czyaagxyjkt755qcaor0.jpg",
+    "cloudinaryPublicId": "hs-architects/home-grid/czyaagxyjkt755qcaor0",
+    "createdAt": "2024-01-01T00:00:00Z",
+    "updatedAt": "2026-01-15T13:36:54.274Z"
+  },
+  {
+    "id": "3",
+    "position": 3,
+    "image": "/home.png",
+    "cloudinaryPublicId": null,
+    "createdAt": "2024-01-01T00:00:00Z",
+    "updatedAt": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "4",
+    "position": 4,
+    "image": "/home2.png",
+    "cloudinaryPublicId": null,
+    "createdAt": "2024-01-01T00:00:00Z",
+    "updatedAt": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "5",
+    "position": 5,
+    "image": "/home.png",
+    "cloudinaryPublicId": null,
+    "createdAt": "2024-01-01T00:00:00Z",
+    "updatedAt": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "6",
+    "position": 6,
+    "image": "/home2.png",
+    "cloudinaryPublicId": null,
+    "createdAt": "2024-01-01T00:00:00Z",
+    "updatedAt": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "7",
+    "position": 7,
+    "image": "/home.png",
+    "cloudinaryPublicId": null,
+    "createdAt": "2024-01-01T00:00:00Z",
+    "updatedAt": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "8",
+    "position": 8,
+    "image": "/home2.png",
+    "cloudinaryPublicId": null,
+    "createdAt": "2024-01-01T00:00:00Z",
+    "updatedAt": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "9",
+    "position": 9,
+    "image": "/home.png",
+    "cloudinaryPublicId": null,
+    "createdAt": "2024-01-01T00:00:00Z",
+    "updatedAt": "2024-01-01T00:00:00Z"
+  }
+]
