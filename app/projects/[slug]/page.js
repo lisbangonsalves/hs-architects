@@ -187,12 +187,10 @@ export default function CategoryProjectsPage() {
                   {/* Left: 3x3 Grid */}
                   <div 
                     id={`grid-container-${projectId}`}
-                    className="w-full lg:w-[45%] p-4 sm:p-6 lg:p-8 flex items-center justify-center relative z-0"
-                    style={{ overflow: 'visible' }}
+                    className="w-full lg:w-[45%] p-4 sm:p-6 lg:p-8 flex items-center justify-center relative z-0 overflow-hidden lg:overflow-visible"
                   >
                     <div 
-                      className="w-full max-w-xs lg:max-w-sm relative"
-                      style={{ overflow: 'visible' }}
+                      className="w-full max-w-xs sm:max-w-sm relative overflow-hidden lg:overflow-visible"
                       ref={(el) => {
                         if (el) gridRefs.current[projectId] = el;
                       }}
@@ -232,13 +230,13 @@ export default function CategoryProjectsPage() {
                         })}
                       </div>
 
-                      {/* Expanded Image - Left aligned with grid, same height, extends right */}
+                      {/* Expanded Image - Left aligned with grid, same height, extends right on desktop */}
                       <AnimatePresence>
                         {isExpanded && activeImageId?.startsWith(`${projectId}-`) && (
                           <motion.div
                             key={activeImageId}
                             layoutId={activeImageId}
-                            className="absolute top-0 left-0 z-50"
+                            className="absolute top-0 left-0 z-50 lg:h-auto bg-white lg:bg-transparent"
                             style={{ 
                               height: gridRefs.current[projectId]?.offsetWidth || '100%',
                             }}
@@ -268,11 +266,10 @@ export default function CategoryProjectsPage() {
                                 ]
                               )}
                               alt={`${project.title} - Expanded view`}
-                              className="cursor-pointer hover:opacity-95 transition-opacity duration-200"
+                              className="cursor-pointer hover:opacity-95 transition-opacity duration-200 max-w-[90vw] lg:max-w-none"
                               style={{ 
                                 height: '100%', 
                                 width: 'auto',
-                                maxWidth: 'none',
                                 objectFit: 'contain',
                               }}
                             />
@@ -282,13 +279,13 @@ export default function CategoryProjectsPage() {
                     </div>
                   </div>
 
-                  {/* Middle: White Space Lane - Always visible */}
-                  <div className="w-full lg:w-[5%] bg-white flex items-center justify-center relative min-h-[300px] lg:min-h-0 z-0">
+                  {/* Middle: White Space Lane - Hidden on mobile, visible on desktop */}
+                  <div className="hidden lg:flex w-full lg:w-[5%] bg-white items-center justify-center relative z-0">
                     {/* Empty white space - reserved for future use */}
                   </div>
 
                   {/* Right: Text Column */}
-                  <div className="w-full lg:w-[50%] flex items-center px-4 sm:px-6 lg:px-8 py-12 lg:py-0">
+                  <div className="w-full lg:w-[50%] flex items-center px-4 sm:px-6 lg:px-8 py-6 lg:py-0">
                     <div className="w-full space-y-4">
                       <h2
                         className="text-xl sm:text-2xl lg:text-3xl text-gray-800 font-medium"

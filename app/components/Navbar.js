@@ -47,7 +47,7 @@ export default function Navbar() {
 
   return (
     <>
-      <nav className="fixed top-0 left-0 w-full z-50 bg-transparent">
+      <nav className="fixed top-0 left-0 w-full z-50 bg-white">
         <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12">
           <div className="flex justify-between items-center py-6 sm:py-8">
             {/* Logo - Left */}
