@@ -1,29 +1,25 @@
-import { readFileSync, writeFileSync } from "fs";
-import { join } from "path";
-
-const dataFilePath = join(process.cwd(), "data", "homeGrid.json");
-
-function readData() {
-  try {
-    const fileContents = readFileSync(dataFilePath, "utf8");
-    return JSON.parse(fileContents);
-  } catch (error) {
-    return [];
-  }
-}
-
-function writeData(data) {
-  writeFileSync(dataFilePath, JSON.stringify(data, null, 2), "utf8");
-}
+import connectDB from "../../../lib/mongodb";
+import HomeGrid from "../../../lib/models/HomeGrid";
 
 // GET - Fetch all home grid images
 export async function GET() {
   try {
-    const data = readData();
-    // Sort by position
-    const sorted = data.sort((a, b) => a.position - b.position);
-    return Response.json(sorted);
+    await connectDB();
+    const data = await HomeGrid.find({}).sort({ position: 1 });
+    
+    // Convert to format expected by frontend
+    const formattedData = data.map((item) => ({
+      id: item._id.toString(),
+      position: item.position,
+      image: item.image,
+      cloudinaryPublicId: item.cloudinaryPublicId,
+      createdAt: item.createdAt.toISOString(),
+      updatedAt: item.updatedAt.toISOString(),
+    }));
+    
+    return Response.json(formattedData);
   } catch (error) {
+    console.error("Error fetching home grid images:", error);
     return Response.json(
       { error: "Failed to fetch home grid images" },
       { status: 500 }
@@ -31,39 +27,69 @@ export async function GET() {
   }
 }
 
-// PUT - Update a specific grid image
+// PUT - Update a specific grid image (or create if doesn't exist)
 export async function PUT(request) {
   try {
-    const { id, image, cloudinaryPublicId } = await request.json();
+    await connectDB();
+    const { id, position, image, cloudinaryPublicId } = await request.json();
 
-    if (!id) {
+    if (!id && !position) {
       return Response.json(
-        { error: "Image ID is required" },
+        { error: "Image ID or position is required" },
         { status: 400 }
       );
     }
 
-    const data = readData();
-    const index = data.findIndex((item) => item.id === id);
+    let item;
+    
+    // If ID starts with "temp-", it's a new entry - create it
+    if (id && id.startsWith("temp-")) {
+      // Create new entry at the specified position
+      const pos = position || parseInt(id.split("-")[1]) + 1;
+      item = await HomeGrid.create({
+        position: pos,
+        image: image || "",
+        cloudinaryPublicId: cloudinaryPublicId || null,
+      });
+    } else if (id && !id.startsWith("temp-")) {
+      // Update existing entry
+      const updateData = {};
+      if (image !== undefined) updateData.image = image;
+      if (cloudinaryPublicId !== undefined) updateData.cloudinaryPublicId = cloudinaryPublicId;
+      if (position !== undefined) updateData.position = position;
 
-    if (index === -1) {
-      return Response.json(
-        { error: "Image not found" },
-        { status: 404 }
+      item = await HomeGrid.findByIdAndUpdate(
+        id,
+        updateData,
+        { new: true, runValidators: true }
       );
+
+      if (!item) {
+        return Response.json(
+          { error: "Image not found" },
+          { status: 404 }
+        );
+      }
+    } else {
+      // Create by position only
+      const pos = position || 1;
+      item = await HomeGrid.create({
+        position: pos,
+        image: image || "",
+        cloudinaryPublicId: cloudinaryPublicId || null,
+      });
     }
 
-    // Update the image
-    data[index] = {
-      ...data[index],
-      image: image || data[index].image,
-      cloudinaryPublicId: cloudinaryPublicId !== undefined ? cloudinaryPublicId : data[index].cloudinaryPublicId,
-      updatedAt: new Date().toISOString(),
-    };
-
-    writeData(data);
-    return Response.json(data[index]);
+    return Response.json({
+      id: item._id.toString(),
+      position: item.position,
+      image: item.image,
+      cloudinaryPublicId: item.cloudinaryPublicId,
+      createdAt: item.createdAt.toISOString(),
+      updatedAt: item.updatedAt.toISOString(),
+    });
   } catch (error) {
+    console.error("Error updating home grid image:", error);
     return Response.json(
       { error: "Failed to update home grid image" },
       { status: 500 }
@@ -74,6 +100,7 @@ export async function PUT(request) {
 // POST - Reorder grid images
 export async function POST(request) {
   try {
+    await connectDB();
     const { images } = await request.json();
 
     if (!Array.isArray(images) || images.length !== 9) {
@@ -83,15 +110,33 @@ export async function POST(request) {
       );
     }
 
-    const updated = images.map((img, index) => ({
-      ...img,
-      position: index + 1,
-      updatedAt: new Date().toISOString(),
+    // Update all images in a transaction-like operation
+    const updatePromises = images.map((img, index) => {
+      return HomeGrid.findByIdAndUpdate(
+        img.id,
+        {
+          position: index + 1,
+          image: img.image,
+          cloudinaryPublicId: img.cloudinaryPublicId,
+        },
+        { new: true, runValidators: true }
+      );
+    });
+
+    const updated = await Promise.all(updatePromises);
+
+    const formattedData = updated.map((item) => ({
+      id: item._id.toString(),
+      position: item.position,
+      image: item.image,
+      cloudinaryPublicId: item.cloudinaryPublicId,
+      createdAt: item.createdAt.toISOString(),
+      updatedAt: item.updatedAt.toISOString(),
     }));
 
-    writeData(updated);
-    return Response.json(updated);
+    return Response.json(formattedData);
   } catch (error) {
+    console.error("Error reordering home grid images:", error);
     return Response.json(
       { error: "Failed to reorder home grid images" },
       { status: 500 }

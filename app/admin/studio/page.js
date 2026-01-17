@@ -16,11 +16,6 @@ export default function AdminStudio() {
     }
   }, [router]);
 
-  const handleLogout = () => {
-    localStorage.removeItem("adminAuthenticated");
-    router.push("/admin");
-  };
-
   if (!mounted) {
     return null;
   }
@@ -35,12 +30,6 @@ export default function AdminStudio() {
               <h1 className="text-xl font-semibold text-gray-900 dark:text-white">
                 Studio
               </h1>
-              <button
-                onClick={handleLogout}
-                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white border border-gray-300 dark:border-gray-700 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-              >
-                Logout
-              </button>
             </div>
           </div>
         </header>

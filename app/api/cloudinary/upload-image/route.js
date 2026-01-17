@@ -24,17 +24,20 @@ export async function POST(request) {
     const base64 = buffer.toString("base64");
     const dataURI = `data:${file.type};base64,${base64}`;
 
-    // Upload to Cloudinary
+    // Upload to Cloudinary - preserve original aspect ratio
     const result = await cloudinary.uploader.upload(dataURI, {
-      folder: "hs-architects/home-grid",
+      folder: "hs-architects",
       resource_type: "image",
+      // No forced cropping - keep original aspect ratio
+      // Quality and format optimization only
       transformation: [
         {
-          width: 800,
-          height: 800,
-          crop: "fill",
           quality: "auto",
           format: "auto",
+          // Limit max dimension but preserve aspect ratio
+          width: 2000,
+          height: 2000,
+          crop: "limit",
         },
       ],
     });

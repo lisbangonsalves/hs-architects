@@ -29,10 +29,30 @@ export default function AdminHome() {
     try {
       const response = await fetch("/api/home-grid");
       const data = await response.json();
-      setGridImages(data);
+      
+      // Ensure we always have 9 slots
+      const gridSlots = Array.from({ length: 9 }, (_, index) => {
+        const existing = data.find((item) => item.position === index + 1);
+        return existing || {
+          id: `temp-${index}`,
+          position: index + 1,
+          image: "",
+          cloudinaryPublicId: null,
+        };
+      });
+      
+      setGridImages(gridSlots);
       setLoading(false);
     } catch (error) {
       console.error("Error fetching grid images:", error);
+      // Fallback: create 9 empty slots
+      const emptySlots = Array.from({ length: 9 }, (_, index) => ({
+        id: `temp-${index}`,
+        position: index + 1,
+        image: "",
+        cloudinaryPublicId: null,
+      }));
+      setGridImages(emptySlots);
       setLoading(false);
     }
   };
@@ -57,22 +77,27 @@ export default function AdminHome() {
 
       const uploadData = await uploadResponse.json();
 
-      // Update the grid image
+      const currentImage = gridImages[index];
+      
+      // Update or create the grid image
       const updateResponse = await fetch("/api/home-grid", {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          id: gridImages[index].id,
+          id: currentImage.id,
+          position: index + 1,
           cloudinaryPublicId: uploadData.publicId,
           image: uploadData.url,
         }),
       });
 
-      if (updateResponse.ok) {
-        await fetchGridImages();
+      if (!updateResponse.ok) {
+        throw new Error("Failed to save image");
       }
+
+      await fetchGridImages();
     } catch (error) {
       console.error("Error uploading image:", error);
       alert("Failed to upload image. Please try again.");
@@ -93,11 +118,6 @@ export default function AdminHome() {
       });
     }
     return image.image;
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem("adminAuthenticated");
-    router.push("/admin");
   };
 
   if (!mounted || loading) {
@@ -136,12 +156,6 @@ export default function AdminHome() {
                   Home Page
                 </h1>
               </div>
-              <button
-                onClick={handleLogout}
-                className="px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white border border-gray-300 dark:border-gray-700 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-              >
-                Logout
-              </button>
             </div>
           </div>
         </header>
@@ -164,8 +178,8 @@ export default function AdminHome() {
               <div className="grid grid-cols-3 gap-2 sm:gap-3 lg:gap-4 w-full max-w-full lg:max-w-2xl mx-auto">
                 {gridImages.map((image, index) => (
                   <div
-                    key={image.id}
-                    className="relative aspect-square border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden group touch-manipulation"
+                    key={image.id || index}
+                    className="relative aspect-square border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden group touch-manipulation bg-gray-50 dark:bg-gray-700"
                   >
                     {image.image && (
                       <Image
@@ -175,6 +189,28 @@ export default function AdminHome() {
                         className="object-cover"
                         sizes="(max-width: 640px) 33vw, (max-width: 1024px) 200px, 250px"
                       />
+                    )}
+                    {!image.image && (
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="text-center">
+                          <svg
+                            className="w-8 h-8 sm:w-12 sm:h-12 mx-auto text-gray-400 dark:text-gray-500 mb-2"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M12 4v16m8-8H4"
+                            />
+                          </svg>
+                          <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
+                            Click to upload
+                          </p>
+                        </div>
+                      </div>
                     )}
                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 group-active:bg-black/50 transition-all duration-300 flex items-center justify-center">
                       <label className="cursor-pointer opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity">
@@ -191,16 +227,16 @@ export default function AdminHome() {
                           disabled={uploading[index]}
                         />
                         <div className="bg-white/90 text-gray-900 px-2 py-1.5 sm:px-4 sm:py-2 rounded text-xs sm:text-sm font-medium hover:bg-white active:bg-white transition-colors">
-                          {uploading[index] ? "Uploading..." : "Change"}
+                          {uploading[index] ? "Uploading..." : image.image ? "Change" : "Upload"}
                         </div>
                       </label>
                     </div>
                     {uploading[index] && (
-                      <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                      <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-10">
                         <div className="text-white text-xs sm:text-sm">Uploading...</div>
                       </div>
                     )}
-                    <div className="absolute top-1 left-1 sm:top-2 sm:left-2 bg-black/70 text-white text-xs px-1.5 py-0.5 sm:px-2 sm:py-1 rounded">
+                    <div className="absolute top-1 left-1 sm:top-2 sm:left-2 bg-black/70 text-white text-xs px-1.5 py-0.5 sm:px-2 sm:py-1 rounded z-10">
                       {index + 1}
                     </div>
                   </div>

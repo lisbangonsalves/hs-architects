@@ -25,8 +25,12 @@ export default function AdminLogin() {
       const data = await response.json();
 
       if (data.success) {
-        // Store authentication state
+        // Store authentication state and role
         localStorage.setItem("adminAuthenticated", "true");
+        localStorage.setItem("adminRole", data.role || "admin");
+        if (data.name) {
+          localStorage.setItem("adminName", data.name);
+        }
         router.push("/admin/dashboard");
       } else {
         setError(data.message || "Invalid username or password");

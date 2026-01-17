@@ -58,54 +58,39 @@ export default function ProjectsPage() {
     try {
       const response = await fetch("/api/categories");
       const data = await response.json();
-      // Filter to only show Architecture and Interior Design
-      const filtered = data.filter(
-        (cat) => cat.name === "Architecture" || cat.name === "Interior Design"
-      );
-      setCategories(filtered);
+      // Show all categories
+      setCategories(data);
       setLoading(false);
-      
-      // If no categories found, show a fallback message
-      if (filtered.length === 0) {
-        console.warn("No categories found. Make sure categories.json has Architecture and Interior Design categories.");
-      }
     } catch (error) {
       console.error("Error fetching categories:", error);
       setLoading(false);
     }
   };
 
-  // Placeholder images for the 3x3 grid - using local images as placeholders
-  const categoryImages = {
-    Architecture: [
-      "/home.png",
-      "/home2.png",
-      "/home.png",
-      "/home2.png",
-      "/home.png",
-      "/home2.png",
-      "/home.png",
-      "/home2.png",
-      "/home.png",
-    ],
-    "Interior Design": [
-      "/home2.png",
-      "/home.png",
-      "/home2.png",
-      "/home.png",
-      "/home2.png",
-      "/home.png",
-      "/home2.png",
-      "/home.png",
-      "/home2.png",
-    ],
+  // Get images from category data or use placeholders
+  const getCategoryImages = (category) => {
+    if (category.gridImages && Array.isArray(category.gridImages) && category.gridImages.length > 0) {
+      // Filter out empty strings and ensure we have valid images
+      const validImages = category.gridImages.filter(img => img && img.trim() !== "");
+      if (validImages.length > 0) {
+        // Pad to 9 images if needed
+        const paddedImages = [...validImages];
+        while (paddedImages.length < 9) {
+          paddedImages.push(paddedImages[paddedImages.length % validImages.length] || "/home.png");
+        }
+        return paddedImages.slice(0, 9);
+      }
+    }
+    // Fallback to grey placeholder squares (empty strings will render as light grey)
+    return Array(9).fill("");
   };
 
   // Helper function to get image source (Cloudinary or fallback)
   const getImageSrc = (imagePath) => {
     // Check if it's a Cloudinary public ID (no leading slash) or local path
-    if (imagePath.startsWith('/')) {
-      return imagePath; // Local path
+    if (!imagePath) return null;
+    if (imagePath.startsWith('/') || imagePath.startsWith('http')) {
+      return imagePath; // Local path or full URL
     }
     // Use Cloudinary with optimized settings for grid images
     return getCloudinaryImageUrl(imagePath, {
@@ -117,17 +102,12 @@ export default function ProjectsPage() {
     });
   };
 
-  const categoryContent = {
-    Architecture: {
-      title: "PROJECT — ARCHITECTURE",
-      description:
-        "Projects grounded in simplicity and shaped by site, light, and material—ranging from holiday homes and residences to commercial and institutional work.",
-    },
-    "Interior Design": {
-      title: "PROJECT — INTERIOR",
-      description:
-        "Interior spaces crafted with restraint and clarity—homes, workspaces, hospitality, and wellness environments shaped around everyday experience.",
-    },
+  // Get category content from the category data itself
+  const getCategoryContent = (category) => {
+    return {
+      title: `PROJECT — ${category.name.toUpperCase()}`,
+      description: category.description || "",
+    };
   };
 
   return (
@@ -165,10 +145,8 @@ export default function ProjectsPage() {
         ) : (
           <div>
             {categories.map((category, index) => {
-              const content = categoryContent[category.name];
-              if (!content) return null;
-
-              const images = categoryImages[category.name] || [];
+              const content = getCategoryContent(category);
+              const images = getCategoryImages(category);
               const categoryId = `category-${category.id}`;
               const isVisible = visibleElements[categoryId] ?? true;
 
@@ -194,19 +172,24 @@ export default function ProjectsPage() {
                       >
                         <div className="grid grid-cols-3 gap-1 sm:gap-2 aspect-square w-full max-w-xs lg:max-w-sm">
                           {images.map((imagePath, imgIndex) => {
-                            const imageSrc = getImageSrc(imagePath);
+                            const hasImage = imagePath && imagePath.trim() !== "";
+                            const imageSrc = hasImage ? getImageSrc(imagePath) : null;
                             return (
                               <div
                                 key={imgIndex}
                                 className="relative aspect-square overflow-hidden group/image"
                               >
-                                <Image
-                                  src={imageSrc}
-                                  alt={`${category.name} project ${imgIndex + 1}`}
-                                  fill
-                                  className="object-cover transition-transform duration-500 group-hover/image:scale-110"
-                                  sizes="(max-width: 1024px) 33vw, 16vw"
-                                />
+                                {hasImage && imageSrc ? (
+                                  <Image
+                                    src={imageSrc}
+                                    alt={`${category.name} project ${imgIndex + 1}`}
+                                    fill
+                                    className="object-cover transition-transform duration-500 group-hover/image:scale-110"
+                                    sizes="(max-width: 1024px) 33vw, 16vw"
+                                  />
+                                ) : (
+                                  <div className="w-full h-full bg-[#fafafa] border border-gray-200/50" />
+                                )}
                               </div>
                             );
                           })}

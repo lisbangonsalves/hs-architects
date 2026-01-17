@@ -18,70 +18,82 @@ export default function CategoryProjectsPage() {
   const gridRefs = useRef({});
   const [gridHeights, setGridHeights] = useState({});
 
-  // Placeholder projects data
-  const placeholderProjects = [
-    {
-      id: "1",
-      title: "Residential Complex",
-      location: "Mumbai, India",
-      year: "2024",
-      description: "A modern residential development that responds to its urban context with clean lines and thoughtful materiality.",
-      images: [
-        "/home.png",
-        "/home2.png",
-        "/home.png",
-        "/home2.png",
-        "/home.png",
-        "/home2.png",
-        "/home.png",
-        "/home2.png",
-        "/home.png",
-      ],
-    },
-    {
-      id: "2",
-      title: "Office Building",
-      location: "Alibaug, India",
-      year: "2023",
-      description: "A workspace designed around natural light and open collaboration, with restrained material choices.",
-      images: [
-        "/home2.png",
-        "/home.png",
-        "/home2.png",
-        "/home.png",
-        "/home2.png",
-        "/home.png",
-        "/home2.png",
-        "/home.png",
-        "/home2.png",
-      ],
-    },
-    {
-      id: "3",
-      title: "Holiday Home",
-      location: "Goa, India",
-      year: "2023",
-      description: "A retreat that opens to the landscape, using local materials and passive design strategies.",
-      images: [
-        "/home.png",
-        "/home2.png",
-        "/home.png",
-        "/home2.png",
-        "/home.png",
-        "/home2.png",
-        "/home.png",
-        "/home2.png",
-        "/home.png",
-      ],
-    },
-  ];
-
   useEffect(() => {
-    // Simulate fetching projects - replace with actual API call later
-    setTimeout(() => {
-      setProjects(placeholderProjects);
-      setLoading(false);
-    }, 500);
+    const fetchProjects = async () => {
+      try {
+        setLoading(true);
+        
+        // First, get the category ID from the slug
+        const categoriesResponse = await fetch("/api/categories");
+        const categories = await categoriesResponse.json();
+        const category = categories.find((cat) => cat.slug === slug);
+        
+        if (!category) {
+          setProjects([]);
+          setLoading(false);
+          return;
+        }
+        
+        // Fetch projects for this category
+        const projectsResponse = await fetch(`/api/projects?categoryId=${category.id}`);
+        const projectsData = await projectsResponse.json();
+        
+        // Transform projects to match expected format
+        const transformedProjects = projectsData.map((project) => {
+          // Get images from the images array
+          let projectImages = [];
+          
+          if (project.images && Array.isArray(project.images) && project.images.length > 0) {
+            // Filter out empty strings
+            projectImages = project.images.filter(img => img && img.trim() !== "");
+          }
+          
+          // If no images in array, check for single image field (backward compatibility)
+          if (projectImages.length === 0 && project.image && project.image.trim() !== "") {
+            projectImages = [project.image];
+          }
+          
+          // If still no images, use placeholder
+          if (projectImages.length === 0) {
+            projectImages = ["/home.png"];
+          }
+          
+          return {
+            id: project.id,
+            title: project.title || project.name,
+            location: project.location || "",
+            year: project.year || "",
+            description: project.description || "",
+            images: projectImages,
+          };
+        });
+        
+        // Ensure we have exactly 9 images per project (pad by repeating if needed)
+        const transformedWithPaddedImages = transformedProjects.map((project) => {
+          const images = [...project.images];
+          // Pad to 9 by repeating the available images
+          while (images.length < 9) {
+            if (project.images.length > 0) {
+              images.push(project.images[images.length % project.images.length]);
+            } else {
+              images.push("/home.png");
+            }
+          }
+          return { ...project, images: images.slice(0, 9) };
+        });
+        
+        setProjects(transformedWithPaddedImages);
+      } catch (error) {
+        console.error("Error fetching projects:", error);
+        setProjects([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    if (slug) {
+      fetchProjects();
+    }
   }, [slug]);
 
   useEffect(() => {
@@ -133,9 +145,16 @@ export default function CategoryProjectsPage() {
   };
 
   const getImageSrc = (imagePath) => {
-    if (imagePath?.startsWith("/")) {
+    if (!imagePath) return "/home.png";
+    // If it's a full URL (Cloudinary or other), return as-is
+    if (imagePath.startsWith("http")) {
       return imagePath;
     }
+    // If it's a local path
+    if (imagePath.startsWith("/")) {
+      return imagePath;
+    }
+    // If it has cloudinaryPublicId property
     if (imagePath?.cloudinaryPublicId) {
       return getCloudinaryImageUrl(imagePath.cloudinaryPublicId, {
         width: 800,
@@ -145,7 +164,14 @@ export default function CategoryProjectsPage() {
         format: "auto",
       });
     }
-    return imagePath || "/home.png";
+    // Otherwise treat as Cloudinary public ID
+    return getCloudinaryImageUrl(imagePath, {
+      width: 800,
+      height: 800,
+      crop: "fill",
+      quality: "auto",
+      format: "auto",
+    });
   };
 
   if (loading) {
@@ -285,7 +311,7 @@ export default function CategoryProjectsPage() {
                                 ]
                               )}
                               alt={`${project.title} - Expanded view`}
-                              className="cursor-pointer hover:opacity-95 transition-opacity duration-200 max-w-[90vw] lg:max-w-none"
+                              className="cursor-pointer max-w-[90vw] lg:max-w-none"
                               style={{ 
                                 height: '100%', 
                                 width: 'auto',

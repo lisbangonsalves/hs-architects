@@ -1,93 +1,136 @@
-import { readFileSync, writeFileSync } from "fs";
-import { join } from "path";
-
-const dataFilePath = join(process.cwd(), "data", "projects.json");
-
-function readData() {
-  try {
-    const fileContents = readFileSync(dataFilePath, "utf8");
-    return JSON.parse(fileContents);
-  } catch (error) {
-    return [];
-  }
-}
-
-function writeData(data) {
-  writeFileSync(dataFilePath, JSON.stringify(data, null, 2), "utf8");
-}
+import connectDB from "../../../lib/mongodb";
+import Project from "../../../lib/models/Project";
 
 export async function GET(request) {
   try {
+    await connectDB();
     const { searchParams } = new URL(request.url);
     const categoryId = searchParams.get("categoryId");
     
-    let projects = readData();
-    
+    let query = {};
     if (categoryId) {
-      projects = projects.filter((p) => p.categoryId === categoryId);
+      query.categoryId = categoryId;
     }
     
-    return Response.json(projects);
+    const projects = await Project.find(query).sort({ createdAt: -1 });
+    
+    // Convert to format expected by frontend (with id as string)
+    const formattedProjects = projects.map((project) => ({
+      id: project._id.toString(),
+      name: project.name,
+      categoryId: project.categoryId,
+      label: project.label,
+      location: project.location,
+      year: project.year,
+      image: project.image,
+      href: project.href,
+      title: project.title,
+      description: project.description,
+      images: project.images,
+      createdAt: project.createdAt.toISOString(),
+    }));
+    
+    return Response.json(formattedProjects);
   } catch (error) {
+    console.error("Error fetching projects:", error);
     return Response.json({ error: "Failed to fetch projects" }, { status: 500 });
   }
 }
 
 export async function POST(request) {
   try {
+    await connectDB();
     const body = await request.json();
-    const projects = readData();
     
-    const newProject = {
-      id: Date.now().toString(),
-      ...body,
-      createdAt: new Date().toISOString(),
-    };
+    const newProject = new Project({
+      name: body.name,
+      categoryId: body.categoryId,
+      label: body.label,
+      location: body.location || "",
+      year: body.year || "",
+      image: body.image || "",
+      href: body.href || "",
+      title: body.title || "",
+      description: body.description || "",
+      images: body.images || [],
+    });
     
-    projects.push(newProject);
-    writeData(projects);
+    await newProject.save();
     
-    return Response.json(newProject, { status: 201 });
+    return Response.json(
+      {
+        id: newProject._id.toString(),
+        name: newProject.name,
+        categoryId: newProject.categoryId,
+        label: newProject.label,
+        location: newProject.location,
+        year: newProject.year,
+        image: newProject.image,
+        href: newProject.href,
+        title: newProject.title,
+        description: newProject.description,
+        images: newProject.images,
+        createdAt: newProject.createdAt.toISOString(),
+      },
+      { status: 201 }
+    );
   } catch (error) {
+    console.error("Error creating project:", error);
     return Response.json({ error: "Failed to create project" }, { status: 500 });
   }
 }
 
 export async function PUT(request) {
   try {
+    await connectDB();
     const body = await request.json();
     const { id, ...updates } = body;
-    const projects = readData();
     
-    const index = projects.findIndex((p) => p.id === id);
-    if (index === -1) {
+    const project = await Project.findByIdAndUpdate(
+      id,
+      { ...updates },
+      { new: true, runValidators: true }
+    );
+    
+    if (!project) {
       return Response.json({ error: "Project not found" }, { status: 404 });
     }
     
-    projects[index] = { ...projects[index], ...updates };
-    writeData(projects);
-    
-    return Response.json(projects[index]);
+    return Response.json({
+      id: project._id.toString(),
+      name: project.name,
+      categoryId: project.categoryId,
+      label: project.label,
+      location: project.location,
+      year: project.year,
+      image: project.image,
+      href: project.href,
+      title: project.title,
+      description: project.description,
+      images: project.images,
+      createdAt: project.createdAt.toISOString(),
+    });
   } catch (error) {
+    console.error("Error updating project:", error);
     return Response.json({ error: "Failed to update project" }, { status: 500 });
   }
 }
 
 export async function DELETE(request) {
   try {
+    await connectDB();
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");
     
-    const projects = readData();
-    const filtered = projects.filter((p) => p.id !== id);
+    const project = await Project.findByIdAndDelete(id);
     
-    if (filtered.length === projects.length) {
+    if (!project) {
       return Response.json({ error: "Project not found" }, { status: 404 });
     }
     
-    writeData(filtered);
     return Response.json({ success: true });
   } catch (error) {
+    console.error("Error deleting project:", error);
     return Response.json({ error: "Failed to delete project" }, { status: 500 });
   }
 }
