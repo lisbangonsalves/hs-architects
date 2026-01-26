@@ -14,9 +14,30 @@ export default function CategoryProjectsPage() {
   const [activeImageId, setActiveImageId] = useState(null);
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [layoutType, setLayoutType] = useState("list");
+  const [categoryName, setCategoryName] = useState("");
   const categoryRefs = useRef([]);
   const gridRefs = useRef({});
   const [gridHeights, setGridHeights] = useState({});
+  
+  // For grid view - track active image index per project
+  const [activeImageIndices, setActiveImageIndices] = useState({});
+
+  useEffect(() => {
+    fetchLayoutSetting();
+  }, []);
+
+  const fetchLayoutSetting = async () => {
+    try {
+      const response = await fetch("/api/settings?key=projectsLayout");
+      const data = await response.json();
+      if (data.value) {
+        setLayoutType(data.value);
+      }
+    } catch (error) {
+      console.error("Error fetching layout setting:", error);
+    }
+  };
 
   useEffect(() => {
     const fetchProjects = async () => {
@@ -33,6 +54,8 @@ export default function CategoryProjectsPage() {
           setLoading(false);
           return;
         }
+        
+        setCategoryName(category.name);
         
         // Fetch projects for this category
         const projectsResponse = await fetch(`/api/projects?categoryId=${category.id}`);
@@ -65,6 +88,7 @@ export default function CategoryProjectsPage() {
             year: project.year || "",
             description: project.description || "",
             images: projectImages,
+            originalImageCount: projectImages.length,
           };
         });
         
@@ -83,6 +107,13 @@ export default function CategoryProjectsPage() {
         });
         
         setProjects(transformedWithPaddedImages);
+        
+        // Initialize active image indices for grid view
+        const initialIndices = {};
+        transformedWithPaddedImages.forEach(project => {
+          initialIndices[project.id] = 0;
+        });
+        setActiveImageIndices(initialIndices);
       } catch (error) {
         console.error("Error fetching projects:", error);
         setProjects([]);
@@ -174,6 +205,300 @@ export default function CategoryProjectsPage() {
     });
   };
 
+  // Handle dot click for grid view
+  const handleDotClick = (e, projectId, index) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setActiveImageIndices(prev => ({
+      ...prev,
+      [projectId]: index
+    }));
+  };
+
+  // List Layout (Current UI)
+  const renderListLayout = () => (
+    <>
+      {/* Header */}
+      <section className="bg-white pt-24 pb-12 sm:pt-32 sm:pb-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Back Link */}
+          <Link 
+            href="/projects" 
+            className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-800 transition-colors mb-6"
+          >
+            <svg 
+              xmlns="http://www.w3.org/2000/svg" 
+              fill="none" 
+              viewBox="0 0 24 24" 
+              strokeWidth={1.5} 
+              stroke="currentColor" 
+              className="w-4 h-4"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+            </svg>
+            Back to Projects
+          </Link>
+          
+          <h1 className="uppercase tracking-[0.2em] text-2xl sm:text-3xl lg:text-4xl font-medium text-black">
+            {categoryName || slug?.toUpperCase().replace("-", " ") || "PROJECTS"}
+          </h1>
+        </div>
+      </section>
+
+      {/* Projects List */}
+      <div>
+        {projects.map((project, projectIndex) => {
+          const projectId = project.id;
+          const isExpanded = activeImageId?.startsWith(`${projectId}-`);
+
+          return (
+            <div
+              key={project.id}
+              ref={(el) => (categoryRefs.current[projectIndex] = el)}
+              className="border-t border-gray-200 first:border-t-0"
+            >
+              <div className="flex flex-col lg:flex-row items-stretch relative">
+                {/* Left: 3x3 Grid */}
+                <div 
+                  id={`grid-container-${projectId}`}
+                  className="w-full lg:w-[45%] p-4 sm:p-6 lg:p-8 flex items-center justify-center relative z-0 overflow-hidden lg:overflow-visible"
+                >
+                  <div 
+                    className="w-full max-w-xs sm:max-w-sm relative overflow-hidden lg:overflow-visible"
+                    ref={(el) => {
+                      if (el) gridRefs.current[projectId] = el;
+                    }}
+                  >
+                    <div className="grid grid-cols-3 gap-1 sm:gap-2 aspect-square w-full relative">
+                      {project.images.map((imagePath, imageIndex) => {
+                        const imageId = `${projectId}-${imageIndex}`;
+                        const isActive = activeImageId === imageId;
+                        const imageSrc = getImageSrc(imagePath);
+
+                        return (
+                          <div
+                            key={imageIndex}
+                            className="relative aspect-square overflow-hidden"
+                          >
+                            <motion.div
+                              layoutId={imageId}
+                              className={`relative w-full h-full cursor-pointer z-0 ${isActive ? 'opacity-0' : 'opacity-100'}`}
+                              onClick={() => handleImageClick(projectId, imageIndex)}
+                              onKeyDown={(e) => handleImageKeyDown(e, projectId, imageIndex)}
+                              tabIndex={0}
+                              role="button"
+                              aria-label={`Expand image ${imageIndex + 1} of ${project.title}`}
+                              whileHover={!isActive ? { opacity: 0.8 } : {}}
+                              transition={{ duration: 0.2 }}
+                            >
+                              <Image
+                                src={imageSrc}
+                                alt={`${project.title} - Image ${imageIndex + 1}`}
+                                fill
+                                className="object-cover"
+                                sizes="(max-width: 1024px) 33vw, 200px"
+                              />
+                            </motion.div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Expanded Image - Left aligned with grid, same height, extends right on desktop */}
+                    <AnimatePresence>
+                      {isExpanded && activeImageId?.startsWith(`${projectId}-`) && (
+                        <motion.div
+                          key={activeImageId}
+                          layoutId={activeImageId}
+                          className="absolute top-0 left-0 z-50 lg:h-auto bg-white lg:bg-transparent"
+                          style={{ 
+                            height: gridRefs.current[projectId]?.offsetWidth || '100%',
+                          }}
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                          transition={{ 
+                            duration: 0.5, 
+                            ease: [0.4, 0, 0.2, 1],
+                            layout: { duration: 0.5, ease: [0.4, 0, 0.2, 1] }
+                          }}
+                          onClick={() => setActiveImageId(null)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              e.preventDefault();
+                              setActiveImageId(null);
+                            }
+                          }}
+                          tabIndex={0}
+                          role="button"
+                          aria-label="Collapse image"
+                        >
+                          <img
+                            src={getImageSrc(
+                              project.images[
+                                parseInt(activeImageId.split("-")[1])
+                              ]
+                            )}
+                            alt={`${project.title} - Expanded view`}
+                            className="cursor-pointer max-w-[90vw] lg:max-w-none"
+                            style={{ 
+                              height: '100%', 
+                              width: 'auto',
+                              objectFit: 'contain',
+                            }}
+                          />
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                </div>
+
+                {/* Middle: White Space Lane - Hidden on mobile, visible on desktop */}
+                <div className="hidden lg:flex w-full lg:w-[5%] bg-white items-center justify-center relative z-0">
+                  {/* Empty white space - reserved for future use */}
+                </div>
+
+                {/* Right: Text Column */}
+                <div className="w-full lg:w-[50%] flex items-center px-4 sm:px-6 lg:px-8 py-6 lg:py-0">
+                  <div className="w-full space-y-4">
+                    <h2
+                      className="text-xl sm:text-2xl lg:text-3xl text-gray-800 font-medium"
+                      style={{ fontFamily: "system-ui, -apple-system, sans-serif" }}
+                    >
+                      {project.title}
+                    </h2>
+                    <div className="space-y-2 text-sm text-gray-600">
+                      <p>{project.location}</p>
+                      <p>{project.year}</p>
+                    </div>
+                    <p
+                      className="text-sm sm:text-base leading-relaxed text-gray-700 mt-4"
+                      style={{ fontFamily: "system-ui, -apple-system, sans-serif" }}
+                    >
+                      {project.description}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </>
+  );
+
+  // Grid Layout (Square Cards with Hover)
+  const renderGridLayout = () => (
+    <>
+      {/* Header */}
+      <section className="bg-white pt-24 pb-8 sm:pt-32 sm:pb-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Back Link */}
+          <Link 
+            href="/projects" 
+            className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-800 transition-colors mb-6"
+          >
+            <svg 
+              xmlns="http://www.w3.org/2000/svg" 
+              fill="none" 
+              viewBox="0 0 24 24" 
+              strokeWidth={1.5} 
+              stroke="currentColor" 
+              className="w-4 h-4"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+            </svg>
+            Back to Projects
+          </Link>
+          
+          <h1 className="uppercase tracking-[0.2em] text-2xl sm:text-3xl lg:text-4xl font-medium text-black">
+            {categoryName || slug?.toUpperCase().replace("-", " ") || "PROJECTS"}
+          </h1>
+        </div>
+      </section>
+
+      {/* Projects Grid */}
+      {projects.length === 0 ? (
+        <div className="min-h-[50vh] flex items-center justify-center">
+          <p className="text-gray-500">No projects found in this category.</p>
+        </div>
+      ) : (
+        <section className="pb-16 sm:pb-24">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1 sm:gap-1.5">
+              {projects.map((project) => {
+                const currentImageIndex = activeImageIndices[project.id] || 0;
+                const currentImage = project.images[currentImageIndex];
+                const imageSrc = getImageSrc(currentImage);
+                // Use original image count for dots (max 9)
+                const imageCount = Math.min(project.originalImageCount || project.images.length, 9);
+                
+                return (
+                  <div
+                    key={project.id}
+                    className="group relative aspect-square overflow-hidden bg-gray-100"
+                  >
+                    {/* Background Image */}
+                    {imageSrc ? (
+                      <Image
+                        src={imageSrc}
+                        alt={project.title}
+                        fill
+                        className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                      />
+                    ) : (
+                      <div className="absolute inset-0 bg-gradient-to-br from-gray-200 to-gray-300" />
+                    )}
+
+                    {/* Dark Gradient Overlay - stronger on hover */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/0 to-black/0 opacity-0 group-hover:opacity-100 transition-all duration-500 ease-out" />
+
+                    {/* Project Info - appears on hover */}
+                    <div className="absolute inset-x-0 bottom-0 p-4 sm:p-5 opacity-0 group-hover:opacity-100 transition-all duration-500 ease-out transform translate-y-2 group-hover:translate-y-0">
+                      {/* Project Title */}
+                      <h2 
+                        className="text-white text-base sm:text-lg font-medium leading-tight mb-1"
+                        style={{ fontFamily: "system-ui, -apple-system, sans-serif" }}
+                      >
+                        {project.title}
+                      </h2>
+                      
+                      {/* Location */}
+                      {project.location && (
+                        <p className="text-white/80 text-xs sm:text-sm">
+                          {project.location}
+                        </p>
+                      )}
+
+                      {/* Pagination Dots */}
+                      {imageCount > 1 && (
+                        <div className="flex items-center gap-1.5 mt-3">
+                          {Array.from({ length: imageCount }).map((_, index) => (
+                            <button
+                              key={index}
+                              onClick={(e) => handleDotClick(e, project.id, index)}
+                              className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                                index === currentImageIndex
+                                  ? "bg-white scale-110"
+                                  : "bg-white/50 hover:bg-white/80"
+                              }`}
+                              aria-label={`View image ${index + 1}`}
+                            />
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+      )}
+    </>
+  );
+
   if (loading) {
     return (
       <>
@@ -189,172 +514,7 @@ export default function CategoryProjectsPage() {
     <>
       <Navbar />
       <main className="bg-white">
-        {/* Header */}
-        <section className="bg-white pt-24 pb-12 sm:pt-32 sm:pb-16">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            {/* Back Link */}
-            <Link 
-              href="/projects" 
-              className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-800 transition-colors mb-6"
-            >
-              <svg 
-                xmlns="http://www.w3.org/2000/svg" 
-                fill="none" 
-                viewBox="0 0 24 24" 
-                strokeWidth={1.5} 
-                stroke="currentColor" 
-                className="w-4 h-4"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
-              </svg>
-              Back to Projects
-            </Link>
-            
-            <h1 className="uppercase tracking-[0.2em] text-2xl sm:text-3xl lg:text-4xl font-medium text-black">
-              {slug === "architecture" ? "ARCHITECTURE" : slug === "interior-design" ? "INTERIOR DESIGN" : "PROJECTS"}
-            </h1>
-          </div>
-        </section>
-
-        {/* Projects List */}
-        <div>
-          {projects.map((project, projectIndex) => {
-            const projectId = project.id;
-            const isExpanded = activeImageId?.startsWith(`${projectId}-`);
-
-            return (
-              <div
-                key={project.id}
-                ref={(el) => (categoryRefs.current[projectIndex] = el)}
-                className="border-t border-gray-200 first:border-t-0"
-              >
-                <div className="flex flex-col lg:flex-row items-stretch relative">
-                  {/* Left: 3x3 Grid */}
-                  <div 
-                    id={`grid-container-${projectId}`}
-                    className="w-full lg:w-[45%] p-4 sm:p-6 lg:p-8 flex items-center justify-center relative z-0 overflow-hidden lg:overflow-visible"
-                  >
-                    <div 
-                      className="w-full max-w-xs sm:max-w-sm relative overflow-hidden lg:overflow-visible"
-                      ref={(el) => {
-                        if (el) gridRefs.current[projectId] = el;
-                      }}
-                    >
-                      <div className="grid grid-cols-3 gap-1 sm:gap-2 aspect-square w-full relative">
-                        {project.images.map((imagePath, imageIndex) => {
-                          const imageId = `${projectId}-${imageIndex}`;
-                          const isActive = activeImageId === imageId;
-                          const imageSrc = getImageSrc(imagePath);
-
-                          return (
-                            <div
-                              key={imageIndex}
-                              className="relative aspect-square overflow-hidden"
-                            >
-                              <motion.div
-                                layoutId={imageId}
-                                className={`relative w-full h-full cursor-pointer z-0 ${isActive ? 'opacity-0' : 'opacity-100'}`}
-                                onClick={() => handleImageClick(projectId, imageIndex)}
-                                onKeyDown={(e) => handleImageKeyDown(e, projectId, imageIndex)}
-                                tabIndex={0}
-                                role="button"
-                                aria-label={`Expand image ${imageIndex + 1} of ${project.title}`}
-                                whileHover={!isActive ? { opacity: 0.8 } : {}}
-                                transition={{ duration: 0.2 }}
-                              >
-                                <Image
-                                  src={imageSrc}
-                                  alt={`${project.title} - Image ${imageIndex + 1}`}
-                                  fill
-                                  className="object-cover"
-                                  sizes="(max-width: 1024px) 33vw, 200px"
-                                />
-                              </motion.div>
-                            </div>
-                          );
-                        })}
-                      </div>
-
-                      {/* Expanded Image - Left aligned with grid, same height, extends right on desktop */}
-                      <AnimatePresence>
-                        {isExpanded && activeImageId?.startsWith(`${projectId}-`) && (
-                          <motion.div
-                            key={activeImageId}
-                            layoutId={activeImageId}
-                            className="absolute top-0 left-0 z-50 lg:h-auto bg-white lg:bg-transparent"
-                            style={{ 
-                              height: gridRefs.current[projectId]?.offsetWidth || '100%',
-                            }}
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            transition={{ 
-                              duration: 0.5, 
-                              ease: [0.4, 0, 0.2, 1],
-                              layout: { duration: 0.5, ease: [0.4, 0, 0.2, 1] }
-                            }}
-                            onClick={() => setActiveImageId(null)}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter" || e.key === " ") {
-                                e.preventDefault();
-                                setActiveImageId(null);
-                              }
-                            }}
-                            tabIndex={0}
-                            role="button"
-                            aria-label="Collapse image"
-                          >
-                            <img
-                              src={getImageSrc(
-                                project.images[
-                                  parseInt(activeImageId.split("-")[1])
-                                ]
-                              )}
-                              alt={`${project.title} - Expanded view`}
-                              className="cursor-pointer max-w-[90vw] lg:max-w-none"
-                              style={{ 
-                                height: '100%', 
-                                width: 'auto',
-                                objectFit: 'contain',
-                              }}
-                            />
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </div>
-                  </div>
-
-                  {/* Middle: White Space Lane - Hidden on mobile, visible on desktop */}
-                  <div className="hidden lg:flex w-full lg:w-[5%] bg-white items-center justify-center relative z-0">
-                    {/* Empty white space - reserved for future use */}
-                  </div>
-
-                  {/* Right: Text Column */}
-                  <div className="w-full lg:w-[50%] flex items-center px-4 sm:px-6 lg:px-8 py-6 lg:py-0">
-                    <div className="w-full space-y-4">
-                      <h2
-                        className="text-xl sm:text-2xl lg:text-3xl text-gray-800 font-medium"
-                        style={{ fontFamily: "system-ui, -apple-system, sans-serif" }}
-                      >
-                        {project.title}
-                      </h2>
-                      <div className="space-y-2 text-sm text-gray-600">
-                        <p>{project.location}</p>
-                        <p>{project.year}</p>
-                      </div>
-                      <p
-                        className="text-sm sm:text-base leading-relaxed text-gray-700 mt-4"
-                        style={{ fontFamily: "system-ui, -apple-system, sans-serif" }}
-                      >
-                        {project.description}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+        {layoutType === "list" ? renderListLayout() : renderGridLayout()}
       </main>
     </>
   );
